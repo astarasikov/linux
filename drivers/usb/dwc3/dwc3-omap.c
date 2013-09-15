@@ -149,12 +149,12 @@ int dwc3_omap_vbus_connect(struct device *dev)
 	if (!dev)
 		return -ENODEV;
 
-	dev_dbg(omap->dev, "VBUS Connect\n");
 
 	pdev = to_platform_device(dev);
 	omap =  platform_get_drvdata(pdev);
 	if (!omap)
 		return -ENODEV;
+	dev_dbg(omap->dev, "VBUS Connect\n");
 
 	val = dwc3_omap_readl(omap->base, USBOTGSS_UTMI_OTG_STATUS);
 	val &= ~USBOTGSS_UTMI_OTG_STATUS_SESSEND;
@@ -173,8 +173,8 @@ int dwc3_omap_mailbox(enum omap_dwc3_vbus_id_status status)
 	u32			val;
 	struct dwc3_omap	*omap = _omap;
 
-	if (!omap) {
-		dev_dbg(omap->dev, "not ready , deferring\n");
+	if (!omap || !omap->dev || !omap->base) {
+		//dev_dbg(omap->dev, "not ready , deferring\n");
 		return -EPROBE_DEFER;
 	}
 	switch (status) {
