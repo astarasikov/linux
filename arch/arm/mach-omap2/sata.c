@@ -128,7 +128,7 @@ struct omap_sata_platdata {
 
 static struct omap_sata_platdata	omap_sata_data;
 static struct ahci_platform_data	sata_pdata;
-static u64				sata_dmamask = DMA_BIT_MASK(32);
+static u64				sata_dmamask = DMA_BIT_MASK(64);
 
 
 static void __iomem			*sataphy_pwr;
@@ -628,6 +628,6 @@ void __init omap_sata_init(void)
 	dev = &pdev->dev;
 	get_device(dev);
 	dev->dma_mask = &sata_dmamask;
-	dev->coherent_dma_mask = DMA_BIT_MASK(32);
+	dev->coherent_dma_mask = DMA_BIT_MASK(64);
 	put_device(dev);
 }

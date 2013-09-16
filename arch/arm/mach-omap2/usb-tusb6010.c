@@ -132,14 +132,14 @@ static struct resource tusb_resources[] = {
 	},
 };
 
-static u64 tusb_dmamask = ~(u32)0;
+static u64 tusb_dmamask = ~(u64)0;
 
 static struct platform_device tusb_device = {
 	.name		= "musb-tusb",
 	.id		= -1,
 	.dev = {
 		.dma_mask		= &tusb_dmamask,
-		.coherent_dma_mask	= 0xffffffff,
+		.coherent_dma_mask	= 0xffffffffffffffff,
 	},
 	.num_resources	= ARRAY_SIZE(tusb_resources),
 	.resource	= tusb_resources,

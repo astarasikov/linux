@@ -94,7 +94,7 @@ arch_initcall(omap_init_vrfb);
 
 #if defined(CONFIG_FB_OMAP2) || defined(CONFIG_FB_OMAP2_MODULE)
 
-static u64 omap_fb_dma_mask = ~(u32)0;
+static u64 omap_fb_dma_mask = ~(u64)0;
 static struct omapfb_platform_data omapfb_config;
 
 static struct platform_device omap_fb_device = {
@@ -102,7 +102,7 @@ static struct platform_device omap_fb_device = {
 	.id		= -1,
 	.dev = {
 		.dma_mask		= &omap_fb_dma_mask,
-		.coherent_dma_mask	= DMA_BIT_MASK(32),
+		.coherent_dma_mask	= DMA_BIT_MASK(64),
 		.platform_data		= &omapfb_config,
 	},
 	.num_resources = 0,
