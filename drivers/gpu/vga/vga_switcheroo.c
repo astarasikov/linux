@@ -96,6 +96,16 @@ static void vga_switcheroo_enable(void)
 			return;
 
 		client->id = ret;
+
+		if (!client->active && client->ops->reprobe_connectors) {
+			int old_id = (client->id == VGA_SWITCHEROO_IGD) ?
+				VGA_SWITCHEROO_DIS : VGA_SWITCHEROO_IGD;
+			if (vgasr_priv.handler->switch_ddc)
+				vgasr_priv.handler->switch_ddc(client->id);
+			client->ops->reprobe_connectors(client->pdev);
+			if (vgasr_priv.handler->switch_ddc)
+				vgasr_priv.handler->switch_ddc(old_id);
+		}
 	}
 	vga_switcheroo_debugfs_init(&vgasr_priv);
 	vgasr_priv.active = true;

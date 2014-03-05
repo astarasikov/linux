@@ -40,6 +40,7 @@ struct vga_switcheroo_handler {
 struct vga_switcheroo_client_ops {
 	void (*set_gpu_state)(struct pci_dev *dev, enum vga_switcheroo_state);
 	void (*reprobe)(struct pci_dev *dev);
+	void (*reprobe_connectors)(struct pci_dev *dev);
 	bool (*can_switch)(struct pci_dev *dev);
 };
 
