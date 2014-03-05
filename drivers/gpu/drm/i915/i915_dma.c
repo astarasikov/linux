@@ -1255,6 +1255,13 @@ static unsigned int i915_vga_set_decode(void *cookie, bool state)
 		return VGA_RSRC_NORMAL_IO | VGA_RSRC_NORMAL_MEM;
 }
 
+static void i915_switcheroo_reprobe_connectors(struct pci_dev *pdev)
+{
+	struct drm_device *dev = pci_get_drvdata(pdev);
+
+	intel_reprobe_panel(dev);
+}
+
 static void i915_switcheroo_set_state(struct pci_dev *pdev, enum vga_switcheroo_state state)
 {
 	struct drm_device *dev = pci_get_drvdata(pdev);
@@ -1288,6 +1295,7 @@ static bool i915_switcheroo_can_switch(struct pci_dev *pdev)
 static const struct vga_switcheroo_client_ops i915_switcheroo_ops = {
 	.set_gpu_state = i915_switcheroo_set_state,
 	.reprobe = NULL,
+	.reprobe_connectors = i915_switcheroo_reprobe_connectors,
 	.can_switch = i915_switcheroo_can_switch,
 };
 

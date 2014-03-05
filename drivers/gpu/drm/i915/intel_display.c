@@ -10695,6 +10695,55 @@ const char *intel_output_name(int output)
 	return names[output];
 }
 
+void intel_reprobe_panel(struct drm_device *dev)
+{
+	struct drm_i915_private *dev_priv = dev->dev_private;
+	struct drm_connector *connector;
+	struct intel_connector *intel_connector;
+	struct intel_encoder *encoder;
+
+	/*
+	 * Check whether we've already found a panel. If so, we don't need
+	 * to reprobe
+	 */
+	list_for_each_entry(connector, &dev->mode_config.connector_list, head) {
+		intel_connector = to_intel_connector(connector);
+		if (intel_connector->panel.fixed_mode)
+			return;
+	}
+
+	intel_lvds_init(dev);
+
+	/*
+	 * We only need to care about eDP, so ignore any hardware that
+	 * doesn't support it
+	 */
+	if (HAS_DDI(dev)) {
+		if (I915_READ(DDI_BUF_CTL_A) & DDI_INIT_DISPLAY_DETECTED)
+			intel_ddi_init(dev, PORT_A);
+		if (I915_READ(SFUSE_STRAP) & SFUSE_STRAP_DDID_DETECTED)
+			if (intel_dp_is_edp(dev, PORT_D))
+				intel_ddi_init(dev, PORT_D);
+	} else if (HAS_PCH_SPLIT(dev)) {
+		if (has_edp_a(dev))
+			intel_dp_init(dev, DP_A, PORT_A);
+
+		if (intel_dp_is_edp(dev, PORT_D)
+		    && (I915_READ(PCH_DP_D) & DP_DETECTED))
+			intel_dp_init(dev, PCH_DP_D, PORT_D);
+	}
+
+	list_for_each_entry(encoder, &dev->mode_config.encoder_list, base.head) {
+			    encoder->base.possible_crtcs = encoder->crtc_mask;
+			    encoder->base.possible_clones =
+				    intel_encoder_clones(encoder);
+	}
+
+	intel_init_pch_refclk(dev);
+	drm_mode_group_init_legacy_group(dev, &dev->primary->mode_group);
+	drm_helper_move_panel_connectors_to_head(dev);
+}
+
 static void intel_setup_outputs(struct drm_device *dev)
 {
 	struct drm_i915_private *dev_priv = dev->dev_private;
