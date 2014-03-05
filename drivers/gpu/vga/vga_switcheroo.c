@@ -67,6 +67,11 @@ struct vgasr_priv {
 static int vga_switcheroo_debugfs_init(struct vgasr_priv *priv);
 static void vga_switcheroo_debugfs_fini(struct vgasr_priv *priv);
 
+static enum vga_switcheroo_client_id vga_switcheroo_default = -1;
+
+static int vga_switchto_stage1(struct vga_switcheroo_client *new_client);
+static int vga_switchto_stage2(struct vga_switcheroo_client *new_client);
+
 /* only one switcheroo per system */
 static struct vgasr_priv vgasr_priv = {
 	.clients = LIST_HEAD_INIT(vgasr_priv.clients),
@@ -105,6 +110,18 @@ static void vga_switcheroo_enable(void)
 			client->ops->reprobe_connectors(client->pdev);
 			if (vgasr_priv.handler->switch_ddc)
 				vgasr_priv.handler->switch_ddc(old_id);
+		}
+	}
+
+	list_for_each_entry(client, &vgasr_priv.clients, list) {
+		if (!client->active && client->id == vga_switcheroo_default) {
+			ret = vga_switchto_stage1(client);
+			if (ret)
+				printk(KERN_ERR "vga_switcheroo: switching failed stage 1 %d\n", ret);
+
+			ret = vga_switchto_stage2(client);
+			if (ret)
+				printk(KERN_ERR "vga_switcheroo: switching failed stage 2 %d\n", ret);
 		}
 	}
 	vga_switcheroo_debugfs_init(&vgasr_priv);
@@ -748,3 +765,15 @@ int vga_switcheroo_init_domain_pm_optimus_hdmi_audio(struct device *dev, struct 
 	return -EINVAL;
 }
 EXPORT_SYMBOL(vga_switcheroo_init_domain_pm_optimus_hdmi_audio);
+
+static int __init vga_switcheroo_setup(char *str)
+{
+	if (!strcmp(str, "IGD"))
+		vga_switcheroo_default = VGA_SWITCHEROO_IGD;
+	else if (!strcmp(str, "DIS"))
+		vga_switcheroo_default = VGA_SWITCHEROO_DIS;
+
+	return 1;
+}
+
+__setup("vga_switcheroo=", vga_switcheroo_setup);
