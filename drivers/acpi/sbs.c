@@ -470,17 +470,25 @@ static struct device_attribute alarm_attr = {
 static int acpi_battery_read(struct acpi_battery *battery)
 {
 	int result = 0, saved_present = battery->present;
-	u16 state;
+	u16 state, selected, desired;
 
 	if (battery->sbs->manager_present) {
 		result = acpi_smbus_read(battery->sbs->hc, SMBUS_READ_WORD,
 				ACPI_SBS_MANAGER, 0x01, (u8 *)&state);
 		if (!result)
 			battery->present = state & (1 << battery->id);
-		state &= 0x0fff;
-		state |= 1 << (battery->id + 12);
-		acpi_smbus_write(battery->sbs->hc, SMBUS_WRITE_WORD,
-				  ACPI_SBS_MANAGER, 0x01, (u8 *)&state, 2);
+		/*
+		 * Don't switch battery if the correct one is already selected
+		 */
+		selected = state & 0xf000;
+		desired = 1 << (battery->id + 12);
+		if (selected != desired) {
+			state &= 0x0fff;
+			state |= desired;
+			acpi_smbus_write(battery->sbs->hc, SMBUS_WRITE_WORD,
+					 ACPI_SBS_MANAGER, 0x01,
+					 (u8 *)&state, 2);
+		}
 	} else if (battery->id == 0)
 		battery->present = 1;
 	if (result || !battery->present)
