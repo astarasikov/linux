@@ -359,6 +359,7 @@ static struct vga_switcheroo_handler gmux_handler = {
 	.switch_ddc = gmux_switch_ddc,
 	.power_state = gmux_set_power_state,
 	.get_client_id = gmux_get_client_id,
+	.handler_pm = true,
 };
 
 static inline void gmux_disable_interrupts(struct apple_gmux_data *gmux_data)
