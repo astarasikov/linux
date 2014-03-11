@@ -44,6 +44,7 @@ struct vga_switcheroo_client_ops {
 	void (*reprobe)(struct pci_dev *dev);
 	void (*reprobe_connectors)(struct pci_dev *dev);
 	bool (*can_switch)(struct pci_dev *dev);
+	void (*enable)(struct pci_dev *dev);
 };
 
 #if defined(CONFIG_VGA_SWITCHEROO)
@@ -67,6 +68,7 @@ int vga_switcheroo_process_delayed_switch(void);
 
 int vga_switcheroo_get_client_state(struct pci_dev *dev);
 
+void vga_switcheroo_set_dynamic_support(struct pci_dev *pdev, bool dynamic);
 void vga_switcheroo_set_dynamic_switch(struct pci_dev *pdev, enum vga_switcheroo_state dynamic);
 
 int vga_switcheroo_init_domain_pm_ops(struct device *dev, struct dev_pm_domain *domain);
@@ -94,6 +96,7 @@ static inline void vga_switcheroo_unregister_handler(void) {}
 static inline int vga_switcheroo_process_delayed_switch(void) { return 0; }
 static inline int vga_switcheroo_get_client_state(struct pci_dev *dev) { return VGA_SWITCHEROO_ON; }
 
+static inline void vga_switcheroo_set_dynamic_support(struct pci_dev *pdev, bool dynamic) {}
 static inline void vga_switcheroo_set_dynamic_switch(struct pci_dev *pdev, enum vga_switcheroo_state dynamic) {}
 
 static inline int vga_switcheroo_init_domain_pm_ops(struct device *dev, struct dev_pm_domain *domain) { return -EINVAL; }

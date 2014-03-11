@@ -108,6 +108,9 @@ static void vga_switcheroo_enable(void)
 
 		client->id = ret;
 
+		if (client->ops->enable)
+			client->ops->enable(client->pdev);
+
 		if (!client->active && client->ops->reprobe_connectors) {
 			int old_id = (client->id == VGA_SWITCHEROO_IGD) ?
 				VGA_SWITCHEROO_DIS : VGA_SWITCHEROO_IGD;
@@ -669,6 +672,20 @@ static void vga_switcheroo_power_switch(struct pci_dev *pdev, enum vga_switchero
 
 	vgasr_priv.handler->power_state(client->id, state);
 }
+
+void vga_switcheroo_set_dynamic_support(struct pci_dev *pdev, bool dynamic)
+{
+	struct vga_switcheroo_client *client;
+
+	client = find_client_from_pci(&vgasr_priv.clients, pdev);
+	if (!client)
+		return;
+
+	client->driver_power_control = dynamic;
+
+	return;
+}
+EXPORT_SYMBOL(vga_switcheroo_set_dynamic_support);
 
 /* force a PCI device to a certain state - mainly to turn off audio clients */
 
