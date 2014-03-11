@@ -17,6 +17,8 @@
  - switch_check  - check if the device is in a position to switch now
  */
 
+#include <drm/drm_edid.h>
+
 #include <linux/module.h>
 #include <linux/seq_file.h>
 #include <linux/uaccess.h>
@@ -39,6 +41,7 @@ struct vga_switcheroo_client {
 	int id;
 	bool active;
 	bool driver_power_control;
+	bool use_panel;
 	struct list_head list;
 };
 
@@ -55,6 +58,9 @@ struct vgasr_priv {
 
 	int registered_clients;
 	struct list_head clients;
+
+	struct edid *edid;
+	u8 *dpcd;
 
 	struct vga_switcheroo_handler *handler;
 };
@@ -107,7 +113,9 @@ static void vga_switcheroo_enable(void)
 				VGA_SWITCHEROO_DIS : VGA_SWITCHEROO_IGD;
 			if (vgasr_priv.handler->switch_ddc)
 				vgasr_priv.handler->switch_ddc(client->id);
+			client->use_panel = true;
 			client->ops->reprobe_connectors(client->pdev);
+			client->use_panel = false;
 			if (vgasr_priv.handler->switch_ddc)
 				vgasr_priv.handler->switch_ddc(old_id);
 		}
@@ -411,6 +419,9 @@ static int vga_switchto_stage2(struct vga_switcheroo_client *new_client)
 	ret = vgasr_priv.handler->switchto(new_client->id);
 	if (ret)
 		goto restore_ddc;
+
+	new_client->use_panel = true;
+	active->use_panel = false;
 
 	if (new_client->ops->reprobe)
 		new_client->ops->reprobe(new_client->pdev);
@@ -765,6 +776,54 @@ int vga_switcheroo_init_domain_pm_optimus_hdmi_audio(struct device *dev, struct 
 	return -EINVAL;
 }
 EXPORT_SYMBOL(vga_switcheroo_init_domain_pm_optimus_hdmi_audio);
+
+int vga_switcheroo_set_dpcd(u8 *dpcd)
+{
+	if (vgasr_priv.dpcd)
+		return -EEXIST;
+
+	vgasr_priv.dpcd = kmalloc(8, GFP_KERNEL);
+	memcpy(vgasr_priv.dpcd, dpcd, 8);
+	return 0;
+}
+EXPORT_SYMBOL(vga_switcheroo_set_dpcd);
+
+u8 *vga_switcheroo_get_dpcd(struct pci_dev *pdev)
+{
+	struct vga_switcheroo_client *client;
+	client = find_client_from_pci(&vgasr_priv.clients, pdev);
+
+	if (!client || !client->use_panel)
+		return NULL;
+
+	return vgasr_priv.dpcd;
+}
+EXPORT_SYMBOL(vga_switcheroo_get_dpcd);
+
+int vga_switcheroo_set_edid(struct edid *edid)
+{
+	int size = EDID_LENGTH * (1 + edid->extensions);
+
+	if (vgasr_priv.edid)
+		return -EEXIST;
+
+	vgasr_priv.edid = kmalloc(size, GFP_KERNEL);
+	memcpy(vgasr_priv.edid, edid, size);
+	return 0;
+}
+EXPORT_SYMBOL(vga_switcheroo_set_edid);
+
+struct edid *vga_switcheroo_get_edid(struct pci_dev *pdev)
+{
+	struct vga_switcheroo_client *client;
+	client = find_client_from_pci(&vgasr_priv.clients, pdev);
+
+	if (!client || !client->use_panel)
+		return NULL;
+
+	return vgasr_priv.edid;
+}
+EXPORT_SYMBOL(vga_switcheroo_get_edid);
 
 static int __init vga_switcheroo_setup(char *str)
 {

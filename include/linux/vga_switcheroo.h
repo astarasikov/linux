@@ -10,6 +10,7 @@
 #ifndef _LINUX_VGA_SWITCHEROO_H_
 #define _LINUX_VGA_SWITCHEROO_H_
 
+#include <drm/drm_edid.h>
 #include <linux/fb.h>
 
 struct pci_dev;
@@ -69,6 +70,12 @@ void vga_switcheroo_set_dynamic_switch(struct pci_dev *pdev, enum vga_switcheroo
 
 int vga_switcheroo_init_domain_pm_ops(struct device *dev, struct dev_pm_domain *domain);
 int vga_switcheroo_init_domain_pm_optimus_hdmi_audio(struct device *dev, struct dev_pm_domain *domain);
+
+int vga_switcheroo_set_dpcd(u8 *dpcd);
+u8 *vga_switcheroo_get_dpcd(struct pci_dev *pdev);
+int vga_switcheroo_set_edid(struct edid *edid);
+struct edid *vga_switcheroo_get_edid(struct pci_dev *pdev);
+
 #else
 
 static inline void vga_switcheroo_unregister_client(struct pci_dev *dev) {}
@@ -88,6 +95,11 @@ static inline void vga_switcheroo_set_dynamic_switch(struct pci_dev *pdev, enum 
 
 static inline int vga_switcheroo_init_domain_pm_ops(struct device *dev, struct dev_pm_domain *domain) { return -EINVAL; }
 static inline int vga_switcheroo_init_domain_pm_optimus_hdmi_audio(struct device *dev, struct dev_pm_domain *domain) { return -EINVAL; }
+
+static inline int vga_switcheroo_set_dpcd(u8 *dpcd) { return 0 };
+static inline u8 *vga_switcheroo_get_dpcd(struct pci_dev *pdev) { return NULL };
+static inline int vga_switcheroo_set_edid(struct edid *edid) { return 0 };
+static inline struct edid *vga_switcheroo_get_edid(struct pci_dev *pdev) { return NULL };
 
 #endif
 #endif /* _LINUX_VGA_SWITCHEROO_H_ */
