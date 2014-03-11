@@ -69,9 +69,11 @@ nouveau_dp_detect(struct drm_encoder *encoder)
 	if (!auxch)
 		return false;
 
-	ret = nv_rdaux(auxch, DP_DPCD_REV, dpcd, 8);
-	if (ret)
-		return false;
+	if (dpcd[0] == 0) {
+		ret = nv_rdaux(auxch, DP_DPCD_REV, dpcd, 8);
+		if (ret)
+			return false;
+	}
 
 	nv_encoder->dp.link_bw = 27000 * dpcd[1];
 	nv_encoder->dp.link_nr = dpcd[2] & DP_MAX_LANE_COUNT_MASK;

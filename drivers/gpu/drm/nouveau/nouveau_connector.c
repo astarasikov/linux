@@ -27,6 +27,7 @@
 #include <acpi/button.h>
 
 #include <linux/pm_runtime.h>
+#include <linux/vga_switcheroo.h>
 
 #include <drm/drmP.h>
 #include <drm/drm_edid.h>
@@ -238,6 +239,7 @@ static enum drm_connector_status
 nouveau_connector_detect(struct drm_connector *connector, bool force)
 {
 	struct drm_device *dev = connector->dev;
+	struct pci_dev *pdev = dev->pdev;
 	struct nouveau_drm *drm = nouveau_drm(dev);
 	struct nouveau_connector *nv_connector = nouveau_connector(connector);
 	struct nouveau_encoder *nv_encoder = NULL;
@@ -245,6 +247,7 @@ nouveau_connector_detect(struct drm_connector *connector, bool force)
 	struct nouveau_i2c_port *i2c;
 	int type;
 	int ret;
+	bool is_panel = false;
 	enum drm_connector_status conn_status = connector_status_disconnected;
 
 	/* Cleanup the previous EDID block. */
@@ -260,7 +263,16 @@ nouveau_connector_detect(struct drm_connector *connector, bool force)
 
 	i2c = nouveau_connector_ddc_detect(connector, &nv_encoder);
 	if (i2c) {
-		nv_connector->edid = drm_get_edid(connector, &i2c->adapter);
+		if (nv_connector->type == DCB_CONNECTOR_eDP ||
+		    nv_connector->type == DCB_CONNECTOR_LVDS ||
+		    nv_connector->type == DCB_CONNECTOR_LVDS_SPWG) {
+			is_panel = true;
+			nv_connector->edid = vga_switcheroo_get_edid(pdev);
+		}
+
+		if (!nv_connector->edid)
+			nv_connector->edid = drm_get_edid(connector,
+							  &i2c->adapter);
 		drm_mode_connector_update_edid_property(connector,
 							nv_connector->edid);
 		if (!nv_connector->edid) {
@@ -269,12 +281,24 @@ nouveau_connector_detect(struct drm_connector *connector, bool force)
 			goto detect_analog;
 		}
 
-		if (nv_encoder->dcb->type == DCB_OUTPUT_DP &&
-		    !nouveau_dp_detect(to_drm_encoder(nv_encoder))) {
-			NV_ERROR(drm, "Detected %s, but failed init\n",
-				 drm_get_connector_name(connector));
-			conn_status = connector_status_disconnected;
-			goto out;
+		if (is_panel)
+			vga_switcheroo_set_edid(nv_connector->edid);
+
+		if (nv_encoder->dcb->type == DCB_OUTPUT_DP) {
+			if (is_panel) {
+				u8 *dpcd = vga_switcheroo_get_dpcd(pdev);
+				if (dpcd)
+					memcpy(nv_encoder->dp.dpcd, dpcd,
+					       sizeof(nv_encoder->dp.dpcd));
+			}
+			if (!nouveau_dp_detect(to_drm_encoder(nv_encoder))) {
+				NV_ERROR(drm, "Detected %s, but failed init\n",
+					 drm_get_connector_name(connector));
+				conn_status = connector_status_disconnected;
+				goto out;
+			}
+			if (is_panel)
+				vga_switcheroo_set_dpcd(nv_encoder->dp.dpcd);
 		}
 
 		/* Override encoder type for DVI-I based on whether EDID
