@@ -825,6 +825,14 @@ struct edid *vga_switcheroo_get_edid(struct pci_dev *pdev)
 }
 EXPORT_SYMBOL(vga_switcheroo_get_edid);
 
+bool vga_switcheroo_handler_pm(void) {
+	if (!vgasr_priv.handler)
+		return false;
+
+	return vgasr_priv.handler->handler_pm;
+}
+EXPORT_SYMBOL(vga_switcheroo_handler_pm);
+
 static int __init vga_switcheroo_setup(char *str)
 {
 	if (!strcmp(str, "IGD"))

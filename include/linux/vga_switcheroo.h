@@ -36,6 +36,7 @@ struct vga_switcheroo_handler {
 			   enum vga_switcheroo_state state);
 	int (*init)(void);
 	int (*get_client_id)(struct pci_dev *pdev);
+	bool handler_pm;
 };
 
 struct vga_switcheroo_client_ops {
@@ -76,6 +77,8 @@ u8 *vga_switcheroo_get_dpcd(struct pci_dev *pdev);
 int vga_switcheroo_set_edid(struct edid *edid);
 struct edid *vga_switcheroo_get_edid(struct pci_dev *pdev);
 
+bool vga_switcheroo_handler_pm(void);
+
 #else
 
 static inline void vga_switcheroo_unregister_client(struct pci_dev *dev) {}
@@ -100,6 +103,8 @@ static inline int vga_switcheroo_set_dpcd(u8 *dpcd) { return 0 };
 static inline u8 *vga_switcheroo_get_dpcd(struct pci_dev *pdev) { return NULL };
 static inline int vga_switcheroo_set_edid(struct edid *edid) { return 0 };
 static inline struct edid *vga_switcheroo_get_edid(struct pci_dev *pdev) { return NULL };
+
+static inline bool vga_switcheroo_handler_pm(void) { return false; };
 
 #endif
 #endif /* _LINUX_VGA_SWITCHEROO_H_ */
