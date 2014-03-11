@@ -34,7 +34,7 @@ nouveau_switcheroo_set_state(struct pci_dev *pdev,
 {
 	struct drm_device *dev = pci_get_drvdata(pdev);
 
-	if ((nouveau_is_optimus() || nouveau_is_v1_dsm()) && state == VGA_SWITCHEROO_OFF)
+	if ((nouveau_is_optimus() || nouveau_is_v1_dsm() || vga_switcheroo_handler_pm()) && state == VGA_SWITCHEROO_OFF)
 		return;
 
 	if (state == VGA_SWITCHEROO_ON) {
@@ -93,11 +93,11 @@ nouveau_vga_init(struct nouveau_drm *drm)
 
 	if (nouveau_runtime_pm == 1)
 		runtime = true;
-	if ((nouveau_runtime_pm == -1) && (nouveau_is_optimus() || nouveau_is_v1_dsm()))
+	if ((nouveau_runtime_pm == -1) && (nouveau_is_optimus() || nouveau_is_v1_dsm() || vga_switcheroo_handler_pm()))
 		runtime = true;
 	vga_switcheroo_register_client(dev->pdev, &nouveau_switcheroo_ops, runtime);
 
-	if (runtime && nouveau_is_v1_dsm() && !nouveau_is_optimus())
+	if (runtime && (nouveau_is_v1_dsm() || vga_switcheroo_handler_pm()) && !nouveau_is_optimus())
 		vga_switcheroo_init_domain_pm_ops(drm->dev->dev, &drm->vga_pm_domain);
 }
 

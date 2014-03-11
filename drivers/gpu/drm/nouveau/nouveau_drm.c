@@ -897,7 +897,7 @@ static int nouveau_pmops_runtime_suspend(struct device *dev)
 	}
 
 	/* are we optimus enabled? */
-	if (nouveau_runtime_pm == -1 && !nouveau_is_optimus() && !nouveau_is_v1_dsm()) {
+	if (nouveau_runtime_pm == -1 && !nouveau_is_optimus() && !nouveau_is_v1_dsm() && !vga_switcheroo_handler_pm()) {
 		DRM_DEBUG_DRIVER("failing to power off - not optimus\n");
 		pm_runtime_forbid(dev);
 		return -EBUSY;
@@ -955,7 +955,7 @@ static int nouveau_pmops_runtime_idle(struct device *dev)
 	}
 
 	/* are we optimus enabled? */
-	if (nouveau_runtime_pm == -1 && !nouveau_is_optimus() && !nouveau_is_v1_dsm()) {
+	if (nouveau_runtime_pm == -1 && !nouveau_is_optimus() && !nouveau_is_v1_dsm() && !vga_switcheroo_handler_pm()) {
 		DRM_DEBUG_DRIVER("failing to power off - not optimus\n");
 		pm_runtime_forbid(dev);
 		return -EBUSY;
