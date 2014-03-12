@@ -429,6 +429,9 @@ static int vga_switchto_stage2(struct vga_switcheroo_client *new_client)
 	if (new_client->ops->reprobe)
 		new_client->ops->reprobe(new_client->pdev);
 
+	if (active->ops->reprobe)
+		active->ops->reprobe(active->pdev);
+
 	if (active->pwr_state == VGA_SWITCHEROO_ON)
 		vga_switchoff(active);
 
