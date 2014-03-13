@@ -38,6 +38,7 @@ struct apple_gmux_data {
 	int gpe;
 	enum vga_switcheroo_client_id resume_client_id;
 	enum vga_switcheroo_state power_state;
+	struct completion switch_done;
 	struct completion powerchange_done;
 };
 
@@ -283,6 +284,8 @@ static int gmux_switch_ddc(enum vga_switcheroo_client_id id)
 
 static int gmux_switchto(enum vga_switcheroo_client_id id)
 {
+	reinit_completion(&apple_gmux_data->switch_done);
+
 	if (id == VGA_SWITCHEROO_IGD) {
 		gmux_write8(apple_gmux_data, GMUX_PORT_SWITCH_DDC, 1);
 		gmux_write8(apple_gmux_data, GMUX_PORT_SWITCH_DISPLAY, 2);
@@ -292,6 +295,11 @@ static int gmux_switchto(enum vga_switcheroo_client_id id)
 		gmux_write8(apple_gmux_data, GMUX_PORT_SWITCH_DISPLAY, 3);
 		gmux_write8(apple_gmux_data, GMUX_PORT_SWITCH_EXTERNAL, 3);
 	}
+
+	if (apple_gmux_data->gpe >= 0 &&
+	    !wait_for_completion_interruptible_timeout(&apple_gmux_data->switch_done,
+						       msecs_to_jiffies(200)))
+		pr_warn("Timeout waiting for gmux GPU switch to complete\n");
 
 	return 0;
 }
@@ -400,6 +408,9 @@ static void gmux_notify_handler(acpi_handle device, u32 value, void *context)
 
 	gmux_clear_interrupts(gmux_data);
 	gmux_enable_interrupts(gmux_data);
+
+	if (status & GMUX_INTERRUPT_STATUS_DISPLAY)
+		complete(&gmux_data->switch_done);
 
 	if (status & GMUX_INTERRUPT_STATUS_POWER)
 		complete(&gmux_data->powerchange_done);
@@ -565,6 +576,7 @@ static int gmux_probe(struct pnp_dev *pnp, const struct pnp_device_id *id)
 	}
 
 	apple_gmux_data = gmux_data;
+	init_completion(&gmux_data->switch_done);
 	init_completion(&gmux_data->powerchange_done);
 	gmux_enable_interrupts(gmux_data);
 
