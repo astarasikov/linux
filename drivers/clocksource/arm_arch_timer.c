@@ -331,6 +331,10 @@ static int arch_timer_setup(struct clock_event_device *clk)
 static void
 arch_timer_detect_rate(void __iomem *cntbase, struct device_node *np)
 {
+#ifdef CONFIG_XEN_DOM0
+	arch_timer_rate = 6144000;
+#endif
+
 	/* Who has more than one independent system counter? */
 	if (arch_timer_rate)
 		return;

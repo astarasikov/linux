@@ -72,7 +72,9 @@ static unsigned long arch_timer_freq;
 
 void set_cntfreq(void)
 {
+#ifndef CONFIG_XEN_DOM0
 	omap_smc1(OMAP5_DRA7_MON_SET_CNTFRQ_INDEX, arch_timer_freq);
+#endif
 }
 #endif
 

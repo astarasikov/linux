@@ -2364,7 +2364,9 @@ static struct omap_hwmod_ocp_if *omap54xx_hwmod_ocp_ifs[] __initdata = {
 	&omap54xx_l4_cfg__mailbox,
 	&omap54xx_l4_abe__mcbsp1,
 	&omap54xx_l4_abe__mcbsp2,
+#ifndef CONFIG_XEN_DOM0
 	&omap54xx_l4_abe__mcbsp3,
+#endif
 	&omap54xx_l4_abe__mcpdm,
 	&omap54xx_l4_per__mcspi1,
 	&omap54xx_l4_per__mcspi2,
@@ -2373,8 +2375,10 @@ static struct omap_hwmod_ocp_if *omap54xx_hwmod_ocp_ifs[] __initdata = {
 	&omap54xx_l4_per__mmc1,
 	&omap54xx_l4_per__mmc2,
 	&omap54xx_l4_per__mmc3,
+#ifndef CONFIG_XEN_DOM0
 	&omap54xx_l4_per__mmc4,
 	&omap54xx_l4_per__mmc5,
+#endif
 	&omap54xx_l4_cfg__mpu,
 	&omap54xx_l4_cfg__spinlock,
 	&omap54xx_l4_cfg__ocp2scp1,
