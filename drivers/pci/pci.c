@@ -1193,8 +1193,6 @@ int __weak pcibios_enable_device(struct pci_dev *dev, int bars)
 static int do_pci_enable_device(struct pci_dev *dev, int bars)
 {
 	int err;
-	u16 cmd;
-	u8 pin;
 
 	err = pci_set_power_state(dev, PCI_D0);
 	if (err < 0 && err != -EIO)
@@ -1206,14 +1204,6 @@ static int do_pci_enable_device(struct pci_dev *dev, int bars)
 
 	if (dev->msi_enabled || dev->msix_enabled)
 		return 0;
-
-	pci_read_config_byte(dev, PCI_INTERRUPT_PIN, &pin);
-	if (pin) {
-		pci_read_config_word(dev, PCI_COMMAND, &cmd);
-		if (cmd & PCI_COMMAND_INTX_DISABLE)
-			pci_write_config_word(dev, PCI_COMMAND,
-					      cmd & ~PCI_COMMAND_INTX_DISABLE);
-	}
 
 	return 0;
 }
