@@ -72,11 +72,29 @@ nouveau_switcheroo_can_switch(struct pci_dev *pdev)
 	return can_switch;
 }
 
+void nouveau_switcheroo_enable(struct pci_dev *pdev)
+{
+	struct drm_device *dev = pci_get_drvdata(pdev);
+	struct nouveau_drm *drm = nouveau_drm(dev);
+	bool runtime;
+
+	if (nouveau_runtime_pm == 1)
+		runtime = true;
+	if ((nouveau_runtime_pm == -1) && (nouveau_is_optimus() || nouveau_is_v1_dsm() || vga_switcheroo_handler_pm()))
+		runtime = true;
+
+	vga_switcheroo_set_dynamic_support(pdev, runtime);
+
+	if (runtime && (nouveau_is_v1_dsm() || vga_switcheroo_handler_pm()) && !nouveau_is_optimus())
+		vga_switcheroo_init_domain_pm_ops(drm->dev->dev, &drm->vga_pm_domain);
+}
+
 static const struct vga_switcheroo_client_ops
 nouveau_switcheroo_ops = {
 	.set_gpu_state = nouveau_switcheroo_set_state,
 	.reprobe = nouveau_switcheroo_reprobe,
 	.can_switch = nouveau_switcheroo_can_switch,
+	.enable = nouveau_switcheroo_enable,
 };
 
 void
@@ -90,15 +108,7 @@ nouveau_vga_init(struct nouveau_drm *drm)
 		return;
 
 	vga_client_register(dev->pdev, dev, NULL, nouveau_vga_set_decode);
-
-	if (nouveau_runtime_pm == 1)
-		runtime = true;
-	if ((nouveau_runtime_pm == -1) && (nouveau_is_optimus() || nouveau_is_v1_dsm() || vga_switcheroo_handler_pm()))
-		runtime = true;
-	vga_switcheroo_register_client(dev->pdev, &nouveau_switcheroo_ops, runtime);
-
-	if (runtime && (nouveau_is_v1_dsm() || vga_switcheroo_handler_pm()) && !nouveau_is_optimus())
-		vga_switcheroo_init_domain_pm_ops(drm->dev->dev, &drm->vga_pm_domain);
+	vga_switcheroo_register_client(dev->pdev, &nouveau_switcheroo_ops, false);
 }
 
 void
